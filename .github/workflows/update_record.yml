@@ -10,10 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Update Version File
+      - name: Update Files
         run: |
-          echo "${{ github.event.client_payload.version }}" > VERSION.txt
-          date >> VERSION.txt
+          # Decode and overwrite README.md
+          echo "${{ github.event.client_payload.readme }}" | base64 -d > README.md
+          
+          # Decode Release Note and store in multi-line environment variable
+          echo "DECODED_NOTES<<EOF" >> $GITHUB_ENV
+          echo "${{ github.event.client_payload.release_note }}" | base64 -d >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Commit and Push
         run: |
@@ -29,5 +34,9 @@ jobs:
           tag_name: ${{ github.event.client_payload.version }}
           name: Release ${{ github.event.client_payload.version }}
           body: |
-            Automatically updated from private main repository.
-            Description: ${{ github.event.client_payload.desc }}
+            ### 🚀 Automatically updated from private repository
+            
+            ${{ env.DECODED_NOTES }}
+            
+            ---
+            *Sync Date: $(date +'%Y-%m-%d %H:%M')*
